@@ -1,8 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:weatherapp_test/theme/themes.dart';
 
-class Home extends StatelessWidget {
+import '../models/wearher.dart';
+import '../services/api.dart';
+import 'package:weatherapp_test/models/wearher.dart';
+
+class Home extends StatefulWidget {
   const Home({super.key});
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  late BMKGModel bmkgModel;
+
+  List<Wilayah> wilayahList = [];
+
+  String selectedWilayah = "";
+
+  dynamic cuacaData = {};
+
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    bmkgModel = BMKGModel();
+    bmkgModel.fetchWilayahData().then((value) {
+      setState(() {
+        wilayahList = value;
+        selectedWilayah = value[0].id;
+        fetchCuacaData(selectedWilayah);
+        isLoading = false;
+      });
+    });
+  }
+
+  Future<void> fetchCuacaData(String idWilayah) async {
+    setState(() {
+      isLoading = true;
+    });
+    final data = await bmkgModel.fetchCuacaData(idWilayah);
+    setState(() {
+      cuacaData = data;
+      isLoading = false;
+    });
+  }
 
   Widget locationTitle() {
     return Container(
@@ -11,12 +55,48 @@ class Home extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              'DKI Jakarta',
-              style: whiteTextStyle.copyWith(
-                fontSize: 19,
-                fontWeight: bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DropdownButton(
+                  value: selectedWilayah,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedWilayah = value.toString();
+                      fetchCuacaData(selectedWilayah);
+                    });
+                  },
+                  items: wilayahList.map((wilayah) {
+                    return DropdownMenuItem(
+                      value: wilayah.id,
+                      child: Text(
+                        "${wilayah.kota}, ${wilayah.provinsi}",
+                        style: greyTextStyle.copyWith(
+                          fontSize: 19,
+                          fontWeight: bold,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                // Text(
+                //   'DKI Jakarta',
+                //   style: whiteTextStyle.copyWith(
+                //     fontSize: 19,
+                //     fontWeight: bold,
+                //   ),
+                // ),
+                // SizedBox(
+                //   width: 4,
+                // ),
+                // Container(
+                //   width: 17,
+                //   height: 17,
+                //   decoration: BoxDecoration(
+                //       image: DecorationImage(
+                //           image: AssetImage('assets/icon_arrow.png'))),
+                // )
+              ],
             ),
             SizedBox(
               height: 9.5,
@@ -27,7 +107,8 @@ class Home extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: reguler,
               ),
-            )
+            ),
+  
           ],
         ));
   }
